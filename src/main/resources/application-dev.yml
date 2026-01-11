@@ -1,0 +1,17 @@
+spring:
+  profiles:
+    active: dev
+  
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sara_asansor
+    username: sara_asansor
+    password: sara_asansor
+  
+  jpa:
+    show-sql: true
+
+logging:
+  level:
+    com.saraasansor.api: DEBUG
+    org.springframework.security: DEBUG
+
