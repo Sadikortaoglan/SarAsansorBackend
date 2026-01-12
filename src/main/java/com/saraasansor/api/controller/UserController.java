@@ -1,6 +1,7 @@
 package com.saraasansor.api.controller;
 
 import com.saraasansor.api.dto.ApiResponse;
+import com.saraasansor.api.dto.UserRequestDto;
 import com.saraasansor.api.model.User;
 import com.saraasansor.api.repository.UserRepository;
 import jakarta.validation.Valid;
@@ -40,34 +41,19 @@ public class UserController {
     }
     
     @PostMapping
-    public ResponseEntity<ApiResponse<User>> createUser(@Valid @RequestBody User user) {
+    public ResponseEntity<ApiResponse<User>> createUser(@Valid @RequestBody UserRequestDto dto) {
         try {
-            if (user.getUsername() == null || user.getUsername().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Username is required"));
-            }
-            
-            if (userRepository.existsByUsername(user.getUsername())) {
+            if (userRepository.existsByUsername(dto.getUsername())) {
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("Username already exists"));
             }
             
-            // Password hash is required for new users
-            if (user.getPasswordHash() == null || user.getPasswordHash().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Password is required"));
-            }
-            
-            // Encode password
-            user.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
-            
-            // Set defaults
-            if (user.getRole() == null) {
-                user.setRole(User.Role.PERSONEL);
-            }
-            if (user.getActive() == null) {
-                user.setActive(true);
-            }
+            // Create new user
+            User user = new User();
+            user.setUsername(dto.getUsername());
+            user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+            user.setRole(dto.getRole());
+            user.setActive(dto.getActive() != null ? dto.getActive() : true);
             
             User saved = userRepository.save(user);
             // Don't return password hash
@@ -81,7 +67,7 @@ public class UserController {
     
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<User>> updateUser(
-            @PathVariable Long id, @Valid @RequestBody User user) {
+            @PathVariable Long id, @Valid @RequestBody UserRequestDto dto) {
         try {
             Optional<User> existingUserOpt = userRepository.findById(id);
             if (!existingUserOpt.isPresent()) {
@@ -92,38 +78,29 @@ public class UserController {
             User userToUpdate = existingUserOpt.get();
             
             // Update username if changed
-            if (user.getUsername() != null && !user.getUsername().isEmpty() && 
-                !user.getUsername().equals(userToUpdate.getUsername())) {
-                if (userRepository.existsByUsername(user.getUsername())) {
+            if (dto.getUsername() != null && !dto.getUsername().isEmpty() && 
+                !dto.getUsername().equals(userToUpdate.getUsername())) {
+                if (userRepository.existsByUsername(dto.getUsername())) {
                     return ResponseEntity.badRequest()
                             .body(ApiResponse.error("Username already exists"));
                 }
-                userToUpdate.setUsername(user.getUsername());
+                userToUpdate.setUsername(dto.getUsername());
             }
             
-            // Update password ONLY if provided (not empty)
-            // If passwordHash is provided in request, it means user wants to change password
-            // We need to check if it's a plain password (needs encoding) or already hashed
-            if (user.getPasswordHash() != null && !user.getPasswordHash().isEmpty()) {
-                // Check if it's already a BCrypt hash (starts with $2a$)
-                if (user.getPasswordHash().startsWith("$2a$") || user.getPasswordHash().startsWith("$2b$")) {
-                    // Already hashed, use as is (but this is unusual - usually we encode plain passwords)
-                    userToUpdate.setPasswordHash(user.getPasswordHash());
-                } else {
-                    // Plain password, encode it
-                    userToUpdate.setPasswordHash(passwordEncoder.encode(user.getPasswordHash()));
-                }
+            // Update password if provided
+            if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+                userToUpdate.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
             }
-            // If passwordHash is null or empty, don't update it (keep existing password)
+            // If password is null or empty, don't update it (keep existing password)
             
             // Update role if provided
-            if (user.getRole() != null) {
-                userToUpdate.setRole(user.getRole());
+            if (dto.getRole() != null) {
+                userToUpdate.setRole(dto.getRole());
             }
             
             // Update active status if provided
-            if (user.getActive() != null) {
-                userToUpdate.setActive(user.getActive());
+            if (dto.getActive() != null) {
+                userToUpdate.setActive(dto.getActive());
             }
             
             User saved = userRepository.save(userToUpdate);
