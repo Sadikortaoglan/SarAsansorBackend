@@ -1,11 +1,13 @@
 package com.saraasansor.api.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "parts")
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Part {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

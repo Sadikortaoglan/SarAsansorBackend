@@ -75,4 +75,6 @@ springdoc:
     urls:
       - url: /api-docs
         name: Sara Elevator API
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
 

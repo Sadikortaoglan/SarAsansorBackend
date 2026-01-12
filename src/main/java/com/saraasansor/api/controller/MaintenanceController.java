@@ -53,6 +53,13 @@ public class MaintenanceController {
         }
     }
     
+    @GetMapping("/elevator/{elevatorId}")
+    public ResponseEntity<ApiResponse<List<MaintenanceDto>>> getMaintenancesByElevatorId(
+            @PathVariable Long elevatorId) {
+        List<MaintenanceDto> maintenances = maintenanceService.getMaintenancesByElevatorId(elevatorId);
+        return ResponseEntity.ok(ApiResponse.success(maintenances));
+    }
+    
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<MaintenanceDto>> getMaintenanceById(@PathVariable Long id) {
         try {
@@ -62,13 +69,6 @@ public class MaintenanceController {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
         }
-    }
-    
-    @GetMapping("/elevator/{elevatorId}")
-    public ResponseEntity<ApiResponse<List<MaintenanceDto>>> getMaintenancesByElevatorId(
-            @PathVariable Long elevatorId) {
-        List<MaintenanceDto> maintenances = maintenanceService.getMaintenancesByElevatorId(elevatorId);
-        return ResponseEntity.ok(ApiResponse.success(maintenances));
     }
     
     @PostMapping

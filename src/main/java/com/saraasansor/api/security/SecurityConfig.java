@@ -19,6 +19,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -63,13 +65,30 @@ public class SecurityConfig {
                 // Auth endpoints - permit all
                 .requestMatchers("/auth/**").permitAll()
                 // Swagger/OpenAPI endpoints - permit all
-                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/swagger-ui/index.html").permitAll()
+                // Note: context-path is /api, so swagger paths are relative to that
+                .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/swagger-ui/index.html", "/swagger-ui.html/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/api-docs/**", "/swagger-config/**").permitAll()
                 .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
                 // Users endpoint - only PATRON
                 .requestMatchers("/users/**").hasRole("PATRON")
                 // Everything else requires authentication
                 .anyRequest().authenticated()
+            )
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint((request, response, authException) -> {
+                    System.err.println("❌ Authentication Entry Point - 403 Forbidden");
+                    System.err.println("Request URI: " + request.getRequestURI());
+                    System.err.println("Request Method: " + request.getMethod());
+                    System.err.println("Authorization Header: " + request.getHeader("Authorization"));
+                    System.err.println("SecurityContext Authentication: " + 
+                        (org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null 
+                            ? org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName() 
+                            : "null"));
+                    System.err.println("Auth Exception: " + authException.getMessage());
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\":\"Forbidden\",\"message\":\"" + authException.getMessage() + "\"}");
+                })
             )
             .authenticationProvider(authenticationProvider())
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -86,12 +105,14 @@ public class SecurityConfig {
             "http://localhost:3000",  // React default
             "http://localhost:5174",  // Vite alternative
             "http://127.0.0.1:5173",
-            "http://127.0.0.1:3000"
+            "http://127.0.0.1:3000",
+            "http://localhost:8080"   // Desktop app
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

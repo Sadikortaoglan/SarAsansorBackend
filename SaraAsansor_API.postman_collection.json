@@ -1160,6 +1160,41 @@
         }
       ],
       "description": "Tahsilat fişi endpoint'leri"
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Get all users (PATRON role only)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Users endpoint (PATRON only)"
     }
   ],
   "event": [

@@ -24,6 +24,17 @@ public class ElevatorController {
         return ResponseEntity.ok(ApiResponse.success(elevators));
     }
     
+    @GetMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<ElevatorStatusDto>> getElevatorStatus(@PathVariable Long id) {
+        try {
+            ElevatorStatusDto status = elevatorService.getElevatorStatus(id);
+            return ResponseEntity.ok(ApiResponse.success(status));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+    
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ElevatorDto>> getElevatorById(@PathVariable Long id) {
         try {
@@ -63,17 +74,6 @@ public class ElevatorController {
         try {
             elevatorService.deleteElevator(id);
             return ResponseEntity.ok(ApiResponse.success("Elevator successfully deleted", null));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(e.getMessage()));
-        }
-    }
-    
-    @GetMapping("/{id}/status")
-    public ResponseEntity<ApiResponse<ElevatorStatusDto>> getElevatorStatus(@PathVariable Long id) {
-        try {
-            ElevatorStatusDto status = elevatorService.getElevatorStatus(id);
-            return ResponseEntity.ok(ApiResponse.success(status));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
