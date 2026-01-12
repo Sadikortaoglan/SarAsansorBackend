@@ -4,6 +4,7 @@
 
 -- Insert patron user (username: patron, password: password)
 -- Note: BCrypt hash for "password" is used for development
+-- If login fails, reset database and restart backend to regenerate hash
 INSERT INTO users (username, password_hash, role, active, created_at)
 VALUES ('patron', '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'PATRON', true, CURRENT_TIMESTAMP)
 ON CONFLICT (username) DO NOTHING;
