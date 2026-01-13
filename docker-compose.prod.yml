@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sara-asansor-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:sara_asansor}
+      POSTGRES_USER: ${POSTGRES_USER:sara_asansor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:sara_asansor}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:sara_asansor}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sara-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sara-asansor-api-prod
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:sara_asansor}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:sara_asansor}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:sara_asansor}
+      JWT_SECRET: ${JWT_SECRET}
+      FILE_STORAGE_TYPE: ${FILE_STORAGE_TYPE:local}
+      FILE_STORAGE_LOCAL_DIR: /app/uploads
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - sara-network
+
+networks:
+  sara-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+

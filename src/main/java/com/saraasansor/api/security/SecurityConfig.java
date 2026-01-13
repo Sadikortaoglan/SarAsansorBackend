@@ -60,6 +60,8 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Health check endpoint - permit all
+                .requestMatchers("/health").permitAll()
                 // Error endpoint - permit all (needed for exception handling)
                 .requestMatchers("/error").permitAll()
                 // Auth endpoints - permit all

@@ -1,23 +1,97 @@
 spring:
-  profiles:
-    active: prod
+  application:
+    name: sara-asansor-api
+  
+  mvc:
+    contentnegotiation:
+      favor-path-extension: false
+      favor-parameter: false
+      ignore-accept-header: false
+      default-content-type: application/json
   
   datasource:
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/sara_asansor}
+    username: ${SPRING_DATASOURCE_USERNAME:sara_asansor}
+    password: ${SPRING_DATASOURCE_PASSWORD:sara_asansor}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
   
   jpa:
+    hibernate:
+      ddl-auto: validate
     show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+  
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+  error:
+    include-message: always
+    include-binding-errors: always
 
 logging:
   level:
     com.saraasansor.api: INFO
     org.springframework.security: WARN
+    org.springframework.web: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/sara-asansor-api.log
+    max-size: 10MB
+    max-history: 30
 
 app:
   jwt:
-    secret: ${JWT_SECRET}  # Must be set in production
+    secret: ${JWT_SECRET}
+    access-token-expiration: 3600000  # 1 hour
+    refresh-token-expiration: 604800000  # 7 days
+  
   file-storage:
-    type: s3  # Use S3 in production
+    type: ${FILE_STORAGE_TYPE:local}  # local or s3
+    local:
+      directory: ${FILE_STORAGE_LOCAL_DIR:/app/uploads}
+    s3:
+      endpoint: ${AWS_ENDPOINT:}
+      access-key: ${AWS_ACCESS_KEY:}
+      secret-key: ${AWS_SECRET_KEY:}
+      bucket: ${AWS_BUCKET:sara-asansor-files}
+      region: ${AWS_REGION:us-east-1}
 
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    try-it-out-enabled: true
+    config-url: /api-docs/swagger-config
+    urls:
+      - url: /api-docs
+        name: Sara Elevator API
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
