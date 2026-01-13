@@ -6,15 +6,15 @@ services:
     container_name: sara-asansor-postgres-prod
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:sara_asansor}
-      POSTGRES_USER: ${POSTGRES_USER:sara_asansor}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:sara_asansor}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:sara_asansor}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -32,11 +32,11 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: prod
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:sara_asansor}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:sara_asansor}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:sara_asansor}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
-      FILE_STORAGE_TYPE: ${FILE_STORAGE_TYPE:local}
+      FILE_STORAGE_TYPE: local
       FILE_STORAGE_LOCAL_DIR: /app/uploads
     ports:
       - "8080:8080"
@@ -58,5 +58,3 @@ networks:
 
 volumes:
   postgres_data:
-    driver: local
-
