@@ -101,15 +101,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Allow common frontend development ports
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:5173",  // Vite default
-            "http://localhost:3000",  // React default
-            "http://localhost:5174",  // Vite alternative
-            "http://127.0.0.1:5173",
-            "http://127.0.0.1:3000",
-            "http://localhost:8080"   // Desktop app
-        ));
+        configuration.addAllowedOriginPattern("*");
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
         configuration.setAllowCredentials(true);
