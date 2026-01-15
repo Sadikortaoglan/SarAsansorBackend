@@ -38,6 +38,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       FILE_STORAGE_TYPE: local
       FILE_STORAGE_LOCAL_DIR: /app/uploads
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS}
     ports:
       - "8080:8080"
     volumes:

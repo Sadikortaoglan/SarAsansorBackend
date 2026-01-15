@@ -23,8 +23,6 @@ import org.springframework.core.env.Environment;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -65,14 +63,14 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // OPTIONS requests (CORS preflight) - permit all
+                // OPTIONS requests (CORS preflight) - permit all - MUST be first
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 // Health check endpoint - permit all
                 .requestMatchers("/health").permitAll()
                 // Error endpoint - permit all (needed for exception handling)
                 .requestMatchers("/error").permitAll()
-                // Auth endpoints - permit all
-                .requestMatchers("/auth/**").permitAll()
+                // Auth endpoints - permit all (no JWT required)
+                .requestMatchers("/auth/**", "/api/auth/**").permitAll()
                 // Swagger/OpenAPI endpoints - permit all
                 // Note: context-path is /api, so swagger paths are relative to that
                 .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/swagger-ui/index.html", "/swagger-ui.html/**").permitAll()
@@ -100,31 +98,44 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Build allowed origin patterns (supports wildcards and credentials)
-        List<String> allowedOriginPatterns = new ArrayList<>();
+        // Build allowed origin patterns (supports wildcards with credentials)
+        java.util.List<String> allowedOriginPatterns = new java.util.ArrayList<>();
         
-        // Local development origins
-        allowedOriginPatterns.add("http://localhost:*");  // Any localhost port
-        allowedOriginPatterns.add("http://127.0.0.1:*");  // Any 127.0.0.1 port
+        // Local development origins (always allowed)
+        allowedOriginPatterns.add("http://localhost:*");          // Any localhost port
+        allowedOriginPatterns.add("http://127.0.0.1:*");          // Any 127.0.0.1 port
         
-        // Production origins from environment variable (comma-separated)
+        // Load production origins from environment variable (comma-separated)
+        // Example: CORS_ALLOWED_ORIGINS=http://51.21.3.85,http://51.21.3.85:80
         String corsOrigins = environment.getProperty("CORS_ALLOWED_ORIGINS");
         if (corsOrigins != null && !corsOrigins.trim().isEmpty()) {
             String[] origins = corsOrigins.split(",");
             for (String origin : origins) {
                 String trimmed = origin.trim();
-                if (!trimmed.isEmpty()) {
+                if (!trimmed.isEmpty() && !allowedOriginPatterns.contains(trimmed)) {
                     allowedOriginPatterns.add(trimmed);
                 }
             }
         }
         
         // Use allowedOriginPatterns (supports wildcards with credentials)
+        // Note: setAllowedOrigins("*") is incompatible with allowCredentials(true)
         configuration.setAllowedOriginPatterns(allowedOriginPatterns);
+        
+        // Allow all HTTP methods including OPTIONS for preflight
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
-        configuration.setAllowCredentials(true);  // Required for Authorization header
+        
+        // Allow specific headers (Authorization, Content-Type, Accept, Origin, etc.)
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "Origin", 
+                "X-Requested-With", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
+        
+        // Allow credentials (required for Authorization header)
+        configuration.setAllowCredentials(true);
+        
+        // Cache preflight response for 1 hour
         configuration.setMaxAge(3600L);
+        
+        // Expose headers to frontend
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -55,10 +55,13 @@ server:
 
 logging:
   level:
+    root: WARN
     com.saraasansor.api: INFO
+    org.springframework: WARN
     org.springframework.security: WARN
     org.springframework.web: WARN
     org.hibernate: WARN
+    org.apache.catalina: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
   file:

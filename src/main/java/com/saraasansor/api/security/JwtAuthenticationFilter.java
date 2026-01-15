@@ -33,13 +33,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String requestPath = request.getRequestURI();
         
         // Skip JWT validation for OPTIONS requests (CORS preflight)
-        if ("OPTIONS".equals(requestMethod)) {
+        // MUST be case-insensitive check
+        if ("OPTIONS".equalsIgnoreCase(requestMethod)) {
             filterChain.doFilter(request, response);
             return;
         }
         
         // Skip JWT validation for auth endpoints (they are public)
-        if (requestPath != null && requestPath.startsWith("/auth/")) {
+        // Handle both /auth/** and /api/auth/** paths
+        if (requestPath != null && (requestPath.startsWith("/auth/") || requestPath.startsWith("/api/auth/"))) {
             filterChain.doFilter(request, response);
             return;
         }
