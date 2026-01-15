@@ -1,15 +1,9 @@
 package com.saraasansor.api.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "offer_items")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class OfferItem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,5 +25,58 @@ public class OfferItem {
 
     @Column(name = "line_total", nullable = false)
     private Double lineTotal;
+
+    // Constructors
+    public OfferItem() {
+    }
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Offer getOffer() {
+        return offer;
+    }
+
+    public void setOffer(Offer offer) {
+        this.offer = offer;
+    }
+
+    public Part getPart() {
+        return part;
+    }
+
+    public void setPart(Part part) {
+        this.part = part;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public Double getUnitPrice() {
+        return unitPrice;
+    }
+
+    public void setUnitPrice(Double unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+    public Double getLineTotal() {
+        return lineTotal;
+    }
+
+    public void setLineTotal(Double lineTotal) {
+        this.lineTotal = lineTotal;
+    }
 }
 

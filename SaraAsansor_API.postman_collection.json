@@ -1195,6 +1195,171 @@
         }
       ],
       "description": "Users endpoint (PATRON only)"
+    },
+    {
+      "name": "Offers (Teklifler)",
+      "item": [
+        {
+          "name": "Get All Offers",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers"
+              ]
+            },
+            "description": "Lists all offers."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Offer by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{{offerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{{offerId}}"
+              ]
+            },
+            "description": "Gets offer details by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Offers by Elevator ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/elevator/{{elevatorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "elevator",
+                "{{elevatorId}}"
+              ]
+            },
+            "description": "Gets offers for a specific elevator."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Offer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"elevatorId\": 1,\n    \"date\": \"2024-01-15\",\n    \"vatRate\": 20.0,\n    \"discountAmount\": 0.0,\n    \"subtotal\": 1000.0,\n    \"totalAmount\": 1200.0,\n    \"status\": \"PENDING\",\n    \"items\": [\n        {\n            \"partId\": 1,\n            \"quantity\": 2,\n            \"unitPrice\": 500.0\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/offers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers"
+              ]
+            },
+            "description": "Creates new offer. Items can be included. If items are provided, totals are recalculated automatically."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Offer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"elevatorId\": 1,\n    \"date\": \"2024-01-15\",\n    \"vatRate\": 20.0,\n    \"discountAmount\": 50.0,\n    \"subtotal\": 1000.0,\n    \"totalAmount\": 1140.0,\n    \"status\": \"ACCEPTED\",\n    \"items\": [\n        {\n            \"partId\": 1,\n            \"quantity\": 2,\n            \"unitPrice\": 500.0\n        }\n    ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/offers/{{offerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{{offerId}}"
+              ]
+            },
+            "description": "Updates existing offer. If items are provided, existing items are replaced and totals are recalculated."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Offer",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offers/{{offerId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "offers",
+                "{{offerId}}"
+              ]
+            },
+            "description": "Deletes offer and related offer items (cascade delete)."
+          },
+          "response": []
+        }
+      ],
+      "description": "Offer management endpoints"
     }
   ],
   "event": [
