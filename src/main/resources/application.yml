@@ -28,6 +28,10 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration
+    out-of-order: true  # Allow V4 to run even though V5 was applied (will be fixed by repair)
+    repair-on-migrate: true
+    validate-on-migrate: false  # Temporarily disable validation to allow repair to fix V5
+    ignore-migration-patterns: "*:ignored"  # Ignore deleted migrations
   
   servlet:
     multipart:
@@ -50,7 +54,7 @@ logging:
 app:
   jwt:
     secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production-minimum-32-characters}
-    access-token-expiration: 3600000  # 1 hour
+    access-token-expiration: 900000  # 15 minutes
     refresh-token-expiration: 604800000  # 7 days
   
   file-storage:

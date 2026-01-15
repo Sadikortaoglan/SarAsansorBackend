@@ -52,9 +52,19 @@ public class AuthController {
     }
     
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout() {
-        // JWT is stateless, logout is handled client-side by removing tokens
-        return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @RequestBody(required = false) com.saraasansor.api.dto.auth.RefreshTokenRequest request) {
+        try {
+            if (request != null && request.getRefreshToken() != null) {
+                authService.logout(request.getRefreshToken());
+            } else {
+                authService.logout();
+            }
+            return ResponseEntity.ok(ApiResponse.success("Logout successful", null));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Logout failed: " + e.getMessage()));
+        }
     }
 }
 

@@ -29,50 +29,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         
-        String jwt = getJwtFromRequest(request);
+        String requestMethod = request.getMethod();
         String requestPath = request.getRequestURI();
         
-        // Debug logging
-        System.out.println("🔵 JWT Filter - Request: " + request.getMethod() + " " + requestPath);
-        System.out.println("🔵 JWT Filter - Authorization header: " + (request.getHeader("Authorization") != null ? "present" : "missing"));
-        System.out.println("🔵 JWT Filter - JWT token: " + (jwt != null ? jwt.substring(0, Math.min(20, jwt.length())) + "..." : "null"));
+        // Skip JWT validation for OPTIONS requests (CORS preflight)
+        if ("OPTIONS".equals(requestMethod)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
+        // Skip JWT validation for auth endpoints (they are public)
+        if (requestPath != null && requestPath.startsWith("/auth/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
+        String jwt = getJwtFromRequest(request);
         
         // Only validate JWT if token is present
         if (StringUtils.hasText(jwt)) {
             try {
                 String username = tokenProvider.getUsernameFromToken(jwt);
-                System.out.println("🔵 JWT Filter - Extracted username: " + username);
                 
                 if (tokenProvider.validateToken(jwt, username)) {
-                    System.out.println("✅ JWT Filter - Token validated successfully");
-                    
                     UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-                    System.out.println("✅ JWT Filter - UserDetails loaded: " + userDetails.getUsername() + ", Authorities: " + userDetails.getAuthorities());
                     
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     
                     SecurityContextHolder.getContext().setAuthentication(authentication);
-                    System.out.println("✅ JWT Filter - Authentication set in SecurityContext");
-                } else {
-                    System.out.println("❌ JWT Filter - Token validation failed");
                 }
             } catch (Exception e) {
                 // Invalid token - clear security context and continue
-                System.err.println("❌ JWT Filter - Exception during token validation: " + e.getMessage());
-                e.printStackTrace();
                 SecurityContextHolder.clearContext();
             }
-        } else {
-            System.out.println("⚠️ JWT Filter - No JWT token found in request");
-        }
-        
-        // Check SecurityContext after processing
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            System.out.println("✅ JWT Filter - SecurityContext has authentication: " + SecurityContextHolder.getContext().getAuthentication().getName());
-        } else {
-            System.out.println("⚠️ JWT Filter - SecurityContext has NO authentication");
         }
         
         filterChain.doFilter(request, response);

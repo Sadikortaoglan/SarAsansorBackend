@@ -18,10 +18,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.core.env.Environment;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
@@ -34,6 +36,9 @@ public class SecurityConfig {
     
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+    
+    @Autowired
+    private Environment environment;
     
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -60,6 +65,8 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // OPTIONS requests (CORS preflight) - permit all
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                 // Health check endpoint - permit all
                 .requestMatchers("/health").permitAll()
                 // Error endpoint - permit all (needed for exception handling)
@@ -78,15 +85,6 @@ public class SecurityConfig {
             )
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, authException) -> {
-                    System.err.println("❌ Authentication Entry Point - 403 Forbidden");
-                    System.err.println("Request URI: " + request.getRequestURI());
-                    System.err.println("Request Method: " + request.getMethod());
-                    System.err.println("Authorization Header: " + request.getHeader("Authorization"));
-                    System.err.println("SecurityContext Authentication: " + 
-                        (org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication() != null 
-                            ? org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName() 
-                            : "null"));
-                    System.err.println("Auth Exception: " + authException.getMessage());
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json");
                     response.getWriter().write("{\"error\":\"Forbidden\",\"message\":\"" + authException.getMessage() + "\"}");
@@ -101,10 +99,31 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOriginPattern("*");
+        
+        // Build allowed origin patterns (supports wildcards and credentials)
+        List<String> allowedOriginPatterns = new ArrayList<>();
+        
+        // Local development origins
+        allowedOriginPatterns.add("http://localhost:*");  // Any localhost port
+        allowedOriginPatterns.add("http://127.0.0.1:*");  // Any 127.0.0.1 port
+        
+        // Production origins from environment variable (comma-separated)
+        String corsOrigins = environment.getProperty("CORS_ALLOWED_ORIGINS");
+        if (corsOrigins != null && !corsOrigins.trim().isEmpty()) {
+            String[] origins = corsOrigins.split(",");
+            for (String origin : origins) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty()) {
+                    allowedOriginPatterns.add(trimmed);
+                }
+            }
+        }
+        
+        // Use allowedOriginPatterns (supports wildcards with credentials)
+        configuration.setAllowedOriginPatterns(allowedOriginPatterns);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(true);  // Required for Authorization header
         configuration.setMaxAge(3600L);
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         
