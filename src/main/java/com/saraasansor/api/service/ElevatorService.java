@@ -3,6 +3,8 @@ package com.saraasansor.api.service;
 import com.saraasansor.api.dto.ElevatorDto;
 import com.saraasansor.api.dto.ElevatorStatusDto;
 import com.saraasansor.api.dto.WarningDto;
+import com.saraasansor.api.dto.WarningElevatorDto;
+import com.saraasansor.api.dto.WarningGroupDto;
 import com.saraasansor.api.model.Elevator;
 import com.saraasansor.api.repository.ElevatorRepository;
 import com.saraasansor.api.util.AuditLogger;
@@ -13,7 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -79,6 +84,17 @@ public class ElevatorService {
         
         LocalDate oldInspectionDate = elevator.getInspectionDate();
         LocalDate oldExpiryDate = elevator.getExpiryDate();
+        
+        // Log before mapping
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ElevatorService.class);
+        log.info(
+            "Updating elevator: floorCount={}, capacity={}, speed={}, inspectionDate={}, blueLabel={}",
+            dto.getFloorCount(),
+            dto.getCapacity(),
+            dto.getSpeed(),
+            dto.getInspectionDate(),
+            dto.getBlueLabel()
+        );
         
         mapDtoToEntity(dto, elevator);
         
@@ -171,6 +187,106 @@ public class ElevatorService {
                 .collect(Collectors.toList());
     }
     
+    /**
+     * Get warnings grouped by building (buildingName + address)
+     * Groups elevators by building and returns structured data for frontend expansion
+     * 
+     * Sorting:
+     * - EXPIRED buildings first
+     * - Then WARNING buildings
+     * - Within each group, elevators sorted by maintenanceEndDate ASC
+     * 
+     * @param type Optional: "EXPIRED", "WARNING", or null (both)
+     * @return List of WarningGroupDto grouped by building
+     */
+    public List<WarningGroupDto> getGroupedWarnings(String type) {
+        LocalDate now = LocalDate.now();
+        LocalDate thirtyDaysLater = now.plusDays(30);
+        
+        List<Elevator> expiredElevators = new ArrayList<>();
+        List<Elevator> warningElevators = new ArrayList<>();
+        
+        if (type == null || "EXPIRED".equalsIgnoreCase(type)) {
+            expiredElevators = elevatorRepository.findExpiredElevators(now);
+        }
+        
+        if (type == null || "WARNING".equalsIgnoreCase(type)) {
+            warningElevators = elevatorRepository.findExpiringSoonElevators(now, thirtyDaysLater);
+        }
+        
+        // Group expired elevators by building (buildingName + address)
+        Map<String, WarningGroupDto> expiredGroups = expiredElevators.stream()
+                .collect(Collectors.groupingBy(
+                    elevator -> buildGroupKey(elevator.getBuildingName(), elevator.getAddress()),
+                    LinkedHashMap::new,
+                    Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        elevators -> {
+                            Elevator first = elevators.get(0);
+                            List<WarningElevatorDto> elevatorDtos = elevators.stream()
+                                    .sorted(Comparator.comparing(Elevator::getExpiryDate))
+                                    .map(e -> new WarningElevatorDto(
+                                        e.getIdentityNumber() != null ? e.getIdentityNumber() : "",
+                                        e.getExpiryDate(),
+                                        "EXPIRED"
+                                    ))
+                                    .collect(Collectors.toList());
+                            
+                            return new WarningGroupDto(
+                                first.getBuildingName() != null ? first.getBuildingName() : "",
+                                first.getAddress() != null ? first.getAddress() : "",
+                                "EXPIRED",
+                                elevatorDtos
+                            );
+                        }
+                    )
+                ));
+        
+        // Group warning elevators by building (buildingName + address)
+        Map<String, WarningGroupDto> warningGroups = warningElevators.stream()
+                .collect(Collectors.groupingBy(
+                    elevator -> buildGroupKey(elevator.getBuildingName(), elevator.getAddress()),
+                    LinkedHashMap::new,
+                    Collectors.collectingAndThen(
+                        Collectors.toList(),
+                        elevators -> {
+                            Elevator first = elevators.get(0);
+                            List<WarningElevatorDto> elevatorDtos = elevators.stream()
+                                    .sorted(Comparator.comparing(Elevator::getExpiryDate))
+                                    .map(e -> new WarningElevatorDto(
+                                        e.getIdentityNumber() != null ? e.getIdentityNumber() : "",
+                                        e.getExpiryDate(),
+                                        "WARNING"
+                                    ))
+                                    .collect(Collectors.toList());
+                            
+                            return new WarningGroupDto(
+                                first.getBuildingName() != null ? first.getBuildingName() : "",
+                                first.getAddress() != null ? first.getAddress() : "",
+                                "WARNING",
+                                elevatorDtos
+                            );
+                        }
+                    )
+                ));
+        
+        // Combine and sort: EXPIRED first, then WARNING
+        List<WarningGroupDto> result = new ArrayList<>();
+        result.addAll(expiredGroups.values());
+        result.addAll(warningGroups.values());
+        
+        return result;
+    }
+    
+    /**
+     * Build a unique key for grouping by buildingName and address
+     */
+    private String buildGroupKey(String buildingName, String address) {
+        String name = buildingName != null ? buildingName : "";
+        String addr = address != null ? address : "";
+        return name + "|" + addr; // Use pipe separator to combine
+    }
+    
     private void mapDtoToEntity(ElevatorDto dto, Elevator entity) {
         entity.setIdentityNumber(dto.getIdentityNumber());
         entity.setBuildingName(dto.getBuildingName());
@@ -189,6 +305,7 @@ public class ElevatorService {
         entity.setRope(dto.getRope());
         entity.setModernization(dto.getModernization());
         entity.setInspectionDate(dto.getInspectionDate());
-        // expiryDate will be calculated
+        entity.setBlueLabel(dto.getBlueLabel());
+        // expiryDate will be calculated from inspectionDate
     }
 }

@@ -60,6 +60,9 @@ public class Elevator {
     @Column(name = "expiry_date", nullable = false)
     private LocalDate expiryDate;
 
+    @Column(name = "blue_label")
+    private Boolean blueLabel;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
@@ -69,7 +72,7 @@ public class Elevator {
     public Elevator() {
     }
 
-    public Elevator(Long id, String identityNumber, String buildingName, String address, String elevatorNumber, Integer floorCount, Integer capacity, Double speed, String technicalNotes, String driveType, String machineBrand, String doorType, Integer installationYear, String serialNumber, String controlSystem, String rope, String modernization, LocalDate inspectionDate, LocalDate expiryDate, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Elevator(Long id, String identityNumber, String buildingName, String address, String elevatorNumber, Integer floorCount, Integer capacity, Double speed, String technicalNotes, String driveType, String machineBrand, String doorType, Integer installationYear, String serialNumber, String controlSystem, String rope, String modernization, LocalDate inspectionDate, LocalDate expiryDate, Boolean blueLabel, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.identityNumber = identityNumber;
         this.buildingName = buildingName;
@@ -89,6 +92,7 @@ public class Elevator {
         this.modernization = modernization;
         this.inspectionDate = inspectionDate;
         this.expiryDate = expiryDate;
+        this.blueLabel = blueLabel;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
@@ -248,6 +252,14 @@ public class Elevator {
 
     public void setExpiryDate(LocalDate expiryDate) {
         this.expiryDate = expiryDate;
+    }
+
+    public Boolean getBlueLabel() {
+        return blueLabel;
+    }
+
+    public void setBlueLabel(Boolean blueLabel) {
+        this.blueLabel = blueLabel;
     }
 
     public LocalDateTime getCreatedAt() {

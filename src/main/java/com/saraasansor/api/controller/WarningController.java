@@ -2,6 +2,7 @@ package com.saraasansor.api.controller;
 
 import com.saraasansor.api.dto.ApiResponse;
 import com.saraasansor.api.dto.WarningDto;
+import com.saraasansor.api.dto.WarningGroupDto;
 import com.saraasansor.api.service.ElevatorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,20 @@ public class WarningController {
         }
         
         return ResponseEntity.ok(ApiResponse.success(warnings));
+    }
+    
+    /**
+     * Get warnings grouped by building (buildingName + address)
+     * Returns structured data for frontend expansion UI
+     * 
+     * @param type Optional: "EXPIRED", "WARNING", or null (both)
+     * @return List of WarningGroupDto grouped by building
+     */
+    @GetMapping("/grouped")
+    public ResponseEntity<ApiResponse<List<WarningGroupDto>>> getGroupedWarnings(
+            @RequestParam(required = false) String type) {
+        List<WarningGroupDto> groupedWarnings = elevatorService.getGroupedWarnings(type);
+        return ResponseEntity.ok(ApiResponse.success(groupedWarnings));
     }
 }
 

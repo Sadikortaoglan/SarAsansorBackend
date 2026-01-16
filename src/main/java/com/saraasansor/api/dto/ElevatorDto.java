@@ -24,6 +24,7 @@ public class ElevatorDto {
     private String modernization;
     private LocalDate inspectionDate;
     private LocalDate expiryDate;
+    private Boolean blueLabel;
 
     public ElevatorDto() {
     }
@@ -180,6 +181,14 @@ public class ElevatorDto {
         this.expiryDate = expiryDate;
     }
 
+    public Boolean getBlueLabel() {
+        return blueLabel;
+    }
+
+    public void setBlueLabel(Boolean blueLabel) {
+        this.blueLabel = blueLabel;
+    }
+
     public static ElevatorDto fromEntity(Elevator elevator) {
         ElevatorDto dto = new ElevatorDto();
         dto.setId(elevator.getId());
@@ -201,6 +210,7 @@ public class ElevatorDto {
         dto.setModernization(elevator.getModernization());
         dto.setInspectionDate(elevator.getInspectionDate());
         dto.setExpiryDate(elevator.getExpiryDate());
+        dto.setBlueLabel(elevator.getBlueLabel());
         return dto;
     }
 }
