@@ -33,8 +33,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String requestPath = request.getRequestURI();
         
         // Skip JWT validation for OPTIONS requests (CORS preflight)
-        // MUST be case-insensitive check
+        // MUST be case-insensitive check and set 200 status explicitly
         if ("OPTIONS".equalsIgnoreCase(requestMethod)) {
+            response.setStatus(HttpServletResponse.SC_OK);
             filterChain.doFilter(request, response);
             return;
         }

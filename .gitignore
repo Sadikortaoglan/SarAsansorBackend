@@ -43,3 +43,4 @@ build/
 uploads/
 *.db
 
+.env

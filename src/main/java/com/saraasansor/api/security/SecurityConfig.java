@@ -18,11 +18,15 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.core.env.Environment;
+import org.springframework.core.Ordered;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -94,6 +98,54 @@ public class SecurityConfig {
         return http.build();
     }
     
+    /**
+     * Global CORS Filter that runs BEFORE Spring Security filters.
+     * This ensures CORS headers are added to ALL responses, including error responses.
+     * Order 0 = Highest priority (runs first)
+     */
+    @Bean
+    public FilterRegistrationBean<CorsFilter> corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        
+        // Build allowed origin patterns
+        List<String> allowedOriginPatterns = new java.util.ArrayList<>();
+        
+        // Local development origins (always allowed)
+        allowedOriginPatterns.add("http://localhost:*");
+        allowedOriginPatterns.add("http://127.0.0.1:*");
+        
+        // Load production origins from environment variable
+        String corsOrigins = environment.getProperty("CORS_ALLOWED_ORIGINS");
+        if (corsOrigins != null && !corsOrigins.trim().isEmpty()) {
+            String[] origins = corsOrigins.split(",");
+            for (String origin : origins) {
+                String trimmed = origin.trim();
+                if (!trimmed.isEmpty() && !allowedOriginPatterns.contains(trimmed)) {
+                    allowedOriginPatterns.add(trimmed);
+                }
+            }
+        }
+        
+        // Apply CORS configuration
+        config.setAllowedOriginPatterns(allowedOriginPatterns);
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+        config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        
+        FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(source));
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE); // Order 0 - runs before Spring Security
+        return bean;
+    }
+    
+    /**
+     * CORS Configuration Source for Spring Security.
+     * Used by SecurityFilterChain's .cors() configuration.
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
