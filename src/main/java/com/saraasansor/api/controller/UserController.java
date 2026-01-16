@@ -43,6 +43,12 @@ public class UserController {
     @PostMapping
     public ResponseEntity<ApiResponse<User>> createUser(@Valid @RequestBody UserRequestDto dto) {
         try {
+            // Validate password is required for CREATE
+            if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Password is required when creating a new user"));
+            }
+            
             if (userRepository.existsByUsername(dto.getUsername())) {
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("Username already exists"));
@@ -52,7 +58,14 @@ public class UserController {
             User user = new User();
             user.setUsername(dto.getUsername());
             user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
-            user.setRole(dto.getRole());
+            
+            if (dto.getRole() != null) {
+                user.setRole(dto.getRole());
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Role is required"));
+            }
+            
             user.setActive(dto.getActive() != null ? dto.getActive() : true);
             
             User saved = userRepository.save(user);
@@ -67,7 +80,7 @@ public class UserController {
     
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<User>> updateUser(
-            @PathVariable Long id, @Valid @RequestBody UserRequestDto dto) {
+            @PathVariable Long id, @RequestBody UserRequestDto dto) {
         try {
             Optional<User> existingUserOpt = userRepository.findById(id);
             if (!existingUserOpt.isPresent()) {
@@ -77,8 +90,8 @@ public class UserController {
             
             User userToUpdate = existingUserOpt.get();
             
-            // Update username if changed
-            if (dto.getUsername() != null && !dto.getUsername().isEmpty() && 
+            // Update username if provided and changed
+            if (dto.getUsername() != null && !dto.getUsername().trim().isEmpty() && 
                 !dto.getUsername().equals(userToUpdate.getUsername())) {
                 if (userRepository.existsByUsername(dto.getUsername())) {
                     return ResponseEntity.badRequest()
@@ -87,11 +100,12 @@ public class UserController {
                 userToUpdate.setUsername(dto.getUsername());
             }
             
-            // Update password if provided
-            if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            // Update password ONLY if provided and not blank
+            // If password is null, empty, or blank → keep existing password
+            if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
                 userToUpdate.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
             }
-            // If password is null or empty, don't update it (keep existing password)
+            // No else - password is optional, existing password is preserved
             
             // Update role if provided
             if (dto.getRole() != null) {

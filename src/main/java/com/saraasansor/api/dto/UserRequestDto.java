@@ -9,7 +9,8 @@ public class UserRequestDto {
     @NotBlank(message = "Username is required")
     private String username;
     
-    @NotBlank(message = "Password is required")
+    // Password is required on CREATE, optional on UPDATE
+    // Validation is handled in controller: required for POST, optional for PUT
     private String password;
     
     @NotNull(message = "Role is required")
