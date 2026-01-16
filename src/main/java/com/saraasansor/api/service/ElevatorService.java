@@ -2,6 +2,7 @@ package com.saraasansor.api.service;
 
 import com.saraasansor.api.dto.ElevatorDto;
 import com.saraasansor.api.dto.ElevatorStatusDto;
+import com.saraasansor.api.dto.WarningDto;
 import com.saraasansor.api.model.Elevator;
 import com.saraasansor.api.repository.ElevatorRepository;
 import com.saraasansor.api.util.AuditLogger;
@@ -143,6 +144,29 @@ public class ElevatorService {
         LocalDate thirtyDaysLater = now.plusDays(30);
         return elevatorRepository.findExpiringSoonElevators(now, thirtyDaysLater).stream()
                 .map(ElevatorDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get expired elevators as WarningDto with complete information
+     * Returns elevators with identityNo, buildingName, address, maintenanceEndDate, and status
+     */
+    public List<WarningDto> getExpiredElevatorsAsWarnings() {
+        LocalDate now = LocalDate.now();
+        return elevatorRepository.findExpiredElevators(now).stream()
+                .map(elevator -> WarningDto.fromEntity(elevator, "EXPIRED"))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get expiring soon elevators as WarningDto with complete information
+     * Returns elevators with identityNo, buildingName, address, maintenanceEndDate, and status
+     */
+    public List<WarningDto> getExpiringSoonElevatorsAsWarnings() {
+        LocalDate now = LocalDate.now();
+        LocalDate thirtyDaysLater = now.plusDays(30);
+        return elevatorRepository.findExpiringSoonElevators(now, thirtyDaysLater).stream()
+                .map(elevator -> WarningDto.fromEntity(elevator, "WARNING"))
                 .collect(Collectors.toList());
     }
     

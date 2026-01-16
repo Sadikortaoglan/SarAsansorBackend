@@ -16,6 +16,9 @@ public class Part {
     @Column(nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
     @Column(name = "unit_price", nullable = false)
     private Double unitPrice;
 
@@ -28,9 +31,10 @@ public class Part {
     public Part() {
     }
 
-    public Part(Long id, String name, Double unitPrice, Integer stock, LocalDateTime createdAt) {
+    public Part(Long id, String name, String description, Double unitPrice, Integer stock, LocalDateTime createdAt) {
         this.id = id;
         this.name = name;
+        this.description = description;
         this.unitPrice = unitPrice;
         this.stock = stock;
         this.createdAt = createdAt;
@@ -50,6 +54,14 @@ public class Part {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getDescription() {
+        return description != null ? description : "";
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Double getUnitPrice() {

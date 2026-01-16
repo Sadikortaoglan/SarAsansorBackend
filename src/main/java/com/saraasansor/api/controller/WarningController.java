@@ -1,12 +1,13 @@
 package com.saraasansor.api.controller;
 
 import com.saraasansor.api.dto.ApiResponse;
-import com.saraasansor.api.dto.ElevatorDto;
+import com.saraasansor.api.dto.WarningDto;
 import com.saraasansor.api.service.ElevatorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -17,21 +18,21 @@ public class WarningController {
     private ElevatorService elevatorService;
     
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ElevatorDto>>> getWarnings(
+    public ResponseEntity<ApiResponse<List<WarningDto>>> getWarnings(
             @RequestParam(required = false) String type) {
-        List<ElevatorDto> elevators;
+        List<WarningDto> warnings = new ArrayList<>();
         
         if ("EXPIRED".equalsIgnoreCase(type)) {
-            elevators = elevatorService.getExpiredElevators();
+            warnings = elevatorService.getExpiredElevatorsAsWarnings();
         } else if ("WARNING".equalsIgnoreCase(type)) {
-            elevators = elevatorService.getExpiringSoonElevators();
+            warnings = elevatorService.getExpiringSoonElevatorsAsWarnings();
         } else {
             // Return both
-            elevators = elevatorService.getExpiredElevators();
-            elevators.addAll(elevatorService.getExpiringSoonElevators());
+            warnings = elevatorService.getExpiredElevatorsAsWarnings();
+            warnings.addAll(elevatorService.getExpiringSoonElevatorsAsWarnings());
         }
         
-        return ResponseEntity.ok(ApiResponse.success(elevators));
+        return ResponseEntity.ok(ApiResponse.success(warnings));
     }
 }
 

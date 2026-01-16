@@ -36,6 +36,7 @@ public class PartService {
                 .orElseThrow(() -> new RuntimeException("Part not found"));
         
         existing.setName(part.getName());
+        existing.setDescription(part.getDescription());
         existing.setUnitPrice(part.getUnitPrice());
         existing.setStock(part.getStock());
         
