@@ -43,7 +43,6 @@ public class UserController {
     @PostMapping
     public ResponseEntity<ApiResponse<User>> createUser(@Valid @RequestBody UserRequestDto dto) {
         try {
-            // Validate password is required for CREATE
             if (dto.getPassword() == null || dto.getPassword().trim().isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("Password is required when creating a new user"));
@@ -54,7 +53,6 @@ public class UserController {
                         .body(ApiResponse.error("Username already exists"));
             }
             
-            // Create new user
             User user = new User();
             user.setUsername(dto.getUsername());
             user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
@@ -108,13 +106,34 @@ public class UserController {
             // No else - password is optional, existing password is preserved
             
             // Update role if provided
-            if (dto.getRole() != null) {
+            // CRITICAL: Prevent changing role from PATRON to other if this is the last active PATRON
+            if (dto.getRole() != null && dto.getRole() != userToUpdate.getRole()) {
+                // If changing from PATRON to another role
+                if (userToUpdate.getRole() == User.Role.PATRON && userToUpdate.getActive()) {
+                    long activePatronCount = userRepository.countActiveUsersByRole(User.Role.PATRON);
+                    if (activePatronCount <= 1) {
+                        return ResponseEntity.badRequest()
+                                .body(ApiResponse.error("En az bir aktif PATRON bulunmalıdır. Son aktif PATRON'un rolü değiştirilemez."));
+                    }
+                }
                 userToUpdate.setRole(dto.getRole());
             }
             
             // Update active status if provided
-            if (dto.getActive() != null) {
-                userToUpdate.setActive(dto.getActive());
+            // CRITICAL: Prevent deactivating the last active PATRON
+            if (dto.getActive() != null && !dto.getActive()) {
+                // If trying to deactivate a PATRON user
+                if (userToUpdate.getRole() == User.Role.PATRON && userToUpdate.getActive()) {
+                    long activePatronCount = userRepository.countActiveUsersByRole(User.Role.PATRON);
+                    if (activePatronCount <= 1) {
+                        return ResponseEntity.badRequest()
+                                .body(ApiResponse.error("En az bir aktif PATRON bulunmalıdır."));
+                    }
+                }
+                userToUpdate.setActive(false);
+            } else if (dto.getActive() != null && dto.getActive()) {
+                // Activating is always allowed
+                userToUpdate.setActive(true);
             }
             
             User saved = userRepository.save(userToUpdate);
@@ -128,14 +147,35 @@ public class UserController {
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<User>> deleteUser(@PathVariable Long id) {
         try {
-            if (!userRepository.existsById(id)) {
+            Optional<User> userOpt = userRepository.findById(id);
+            if (!userOpt.isPresent()) {
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("User not found"));
             }
-            userRepository.deleteById(id);
-            return ResponseEntity.ok(ApiResponse.success("User successfully deleted", null));
+            
+            User userToDelete = userOpt.get();
+            
+            // CRITICAL BUSINESS RULE: Physical deletion is FORBIDDEN
+            // Delete operation must be SOFT DELETE (active = false)
+            
+            // CRITICAL: Prevent deleting/deactivating the last active PATRON
+            if (userToDelete.getRole() == User.Role.PATRON && userToDelete.getActive()) {
+                long activePatronCount = userRepository.countActiveUsersByRole(User.Role.PATRON);
+                if (activePatronCount <= 1) {
+                    return ResponseEntity.badRequest()
+                            .body(ApiResponse.error("En az bir aktif PATRON bulunmalıdır."));
+                }
+            }
+            
+            // SOFT DELETE: Set active = false (physical deletion forbidden)
+            userToDelete.setActive(false);
+            User saved = userRepository.save(userToDelete);
+            
+            // Don't return password hash
+            saved.setPasswordHash(null);
+            return ResponseEntity.ok(ApiResponse.success("User successfully deactivated (soft delete)", saved));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(e.getMessage()));
