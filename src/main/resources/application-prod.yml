@@ -33,8 +33,11 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    # Production: ONLY schema migrations, NO seed data
+    # dev/ folder is EXCLUDED - seed data NEVER runs in production
     locations: classpath:db/migration
-    # Note: dev/ folder seed migrations are EXCLUDED in production
+    # CRITICAL: Do NOT include classpath:db/migration/dev
+    # This ensures seed/dummy data NEVER runs in production
   
   servlet:
     multipart:
@@ -70,6 +73,10 @@ logging:
     max-history: 30
 
 app:
+  # Production: Dummy/seed data is FORBIDDEN
+  seed:
+    enabled: false
+  
   jwt:
     secret: ${JWT_SECRET}
     access-token-expiration: 900000  # 15 minutes

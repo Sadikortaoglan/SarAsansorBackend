@@ -13,7 +13,13 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    # Dev: Load both schema migrations AND seed data
     locations: classpath:db/migration,classpath:db/migration/dev
+
+# Allow seed/dummy data in development
+app:
+  seed:
+    enabled: true
 
 logging:
   level:
