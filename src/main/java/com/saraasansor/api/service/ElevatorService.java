@@ -7,6 +7,7 @@ import com.saraasansor.api.model.Elevator;
 import com.saraasansor.api.repository.ElevatorRepository;
 import com.saraasansor.api.util.AuditLogger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +29,7 @@ public class ElevatorService {
     private AuditLogger auditLogger;
     
     public List<ElevatorDto> getAllElevators() {
-        return elevatorRepository.findAll().stream()
+        return elevatorRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
                 .map(ElevatorDto::fromEntity)
                 .collect(Collectors.toList());
     }

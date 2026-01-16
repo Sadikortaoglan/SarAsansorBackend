@@ -6,6 +6,7 @@ import com.saraasansor.api.model.User;
 import com.saraasansor.api.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +26,7 @@ public class UserController {
     
     @GetMapping
     public ResponseEntity<ApiResponse<List<User>>> getAllUsers() {
-        List<User> users = userRepository.findAll();
+        List<User> users = userRepository.findAll(Sort.by(Sort.Direction.ASC, "id"));
         return ResponseEntity.ok(ApiResponse.success(users));
     }
     

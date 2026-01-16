@@ -10,6 +10,7 @@ import com.saraasansor.api.repository.ElevatorRepository;
 import com.saraasansor.api.repository.OfferRepository;
 import com.saraasansor.api.repository.PartRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +31,7 @@ public class OfferService {
     private PartRepository partRepository;
     
     public List<OfferDto> getAllOffers() {
-        return offerRepository.findAll().stream()
+        return offerRepository.findAll(Sort.by(Sort.Direction.ASC, "id")).stream()
                 .map(OfferDto::fromEntity)
                 .collect(Collectors.toList());
     }
